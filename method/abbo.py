@@ -17,7 +17,10 @@ class abbo(Method):
         ]
 
     def gdo_has_permission(self, user) -> bool:
-        return user.is_staff() if self._env_channel else user.is_human()
+        return user.is_member() if self.is_private_context(user) else user.is_staff()
+
+    def is_private_context(self, user) -> bool:
+        return self._env_channel is None or self._env_channel.get_name() == user.get_name()
 
     def gdo_execute(self) -> GDT:
         feed = self.param_value('feed')

@@ -38,13 +38,17 @@ class GDO_RSSFeed(GDO):
     def get_url(self) -> str:
         return self.gdo_val('rss_url')
 
+    @classmethod
+    async def load_entries(cls, url: str):
+        response, content = await asgiref.sync.SyncToAsync(cls._load_url)(url)
+        if response.status >= 400:
+            raise ValueError(f'HTTP {response.status} while loading {url}')
+        return RSSParser.parse(content)
+
     async def check_feed(self) -> int:
         checked = Time.get_date()
         try:
-            response, content = await asgiref.sync.SyncToAsync(self._load_feed)()
-            if response.status >= 400:
-                raise ValueError(f'HTTP {response.status} while loading {self.get_url()}')
-            added = self.store_entries(RSSParser.parse(content))
+            added = self.store_entries(await self.load_entries(self.get_url()))
             if added:
                 self.save_val('rss_last_change', checked)
             return added
@@ -54,8 +58,9 @@ class GDO_RSSFeed(GDO):
         finally:
             self.save_val('rss_last_check', checked)
 
-    def _load_feed(self):
-        return httplib2.Http(timeout=10).request(self.get_url(), method='GET', headers={
+    @staticmethod
+    def _load_url(url: str):
+        return httplib2.Http(timeout=10).request(url, method='GET', headers={
             'accept': 'application/atom+xml, application/rss+xml, application/xml, text/xml',
         })
 

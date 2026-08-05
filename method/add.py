@@ -1,3 +1,4 @@
+from gdo.base.Logger import Logger
 from gdo.date.Time import Time
 from gdo.form.GDT_Form import GDT_Form
 from gdo.form.MethodForm import MethodForm
@@ -18,10 +19,20 @@ class add(MethodForm):
         )
         super().gdo_create_form(form)
 
-    def form_submitted(self):
+    async def form_submitted(self):
+        url = self.param_val('rss_url')
+        try:
+            entries = await GDO_RSSFeed.load_entries(url)
+        except Exception as error:
+            Logger.exception(error)
+            return self.err('err_rss_unreadable')
+
+        checked = Time.get_date()
         feed = GDO_RSSFeed.blank({
             'rss_name': self.param_val('rss_name'),
-            'rss_url': self.param_val('rss_url'),
-            'rss_last_change': Time.get_date(),
+            'rss_url': url,
         }).insert()
+        if feed.store_entries(entries):
+            feed.save_val('rss_last_change', checked)
+        feed.save_val('rss_last_check', checked)
         return self.msg('msg_rss_added', (feed.render_name(),))
