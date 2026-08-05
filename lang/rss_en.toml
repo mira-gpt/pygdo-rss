@@ -1,0 +1,15 @@
+module_rss = "Rss"
+
+mt_rss_overview = "rsss"
+md_rss_overview = "Overview of rss"
+
+mt_rss_add = "Add RSS feed"
+md_rss_add = "Add an RSS or Atom feed."
+msg_rss_added = "RSS feed %s has been added."
+
+##########
+# Abbo #
+##########
+mt_rss_abbo = "Subscribe to RSS feed"
+md_rss_abbo = "Subscribe this user or channel to an RSS feed."
+msg_rss_subscribed = "RSS feed %s has been subscribed."
