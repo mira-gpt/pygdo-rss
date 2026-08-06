@@ -7,6 +7,7 @@ mt_rss_add = "Add RSS feed"
 md_rss_add = "Add an RSS or Atom feed."
 msg_rss_added = "RSS feed %s has been added."
 err_rss_unreadable = "The URL does not provide a readable RSS or Atom feed."
+err_rss_multiple = "The website provides multiple feeds. Please add one directly: %s"
 
 ##########
 # Abbo #
@@ -14,6 +15,9 @@ err_rss_unreadable = "The URL does not provide a readable RSS or Atom feed."
 mt_rss_abbo = "Subscribe to RSS feed"
 md_rss_abbo = "Subscribe this user or channel to an RSS feed."
 msg_rss_subscribed = "RSS feed %s has been subscribed."
+msg_rss_unsubscribed = "RSS feed %s has been unsubscribed."
+err_rss_not_subscribed = "RSS feed %s is not subscribed here."
+msg_rss_entry = "RSS %s: %s %s"
 
 ########
 # News #

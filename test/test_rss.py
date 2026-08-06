@@ -10,6 +10,7 @@ from gdo.date.Time import Time
 from gdo.rss.GDO_RSSAbbo import GDO_RSSAbbo
 from gdo.rss.GDO_RSSEntry import GDO_RSSEntry
 from gdo.rss.GDO_RSSFeed import GDO_RSSFeed
+from gdo.rss.RSSDiscovery import RSSDiscovery
 from gdo.rss.RSSParser import RSSParsedEntry, RSSParser
 from gdo.rss.method.abbo import abbo
 from gdo.rss.method.news import news
@@ -48,6 +49,17 @@ class module_rss_Test(GDOTestCase):
             'rse_uid': 'hn-add',
         }), 'Initial RSS entry was not stored.')
 
+    def test_01b_add_website(self):
+        giz = cli_gizmore()
+        entry = RSSParsedEntry('site-add', 'Discovered entry', 'https://example.org/news/1', datetime.now(timezone.utc))
+        feed_url = 'https://example.org/feed.xml'
+        with (patch.object(GDO_RSSFeed, 'load_entries', new=AsyncMock(side_effect=[ValueError('not a feed'), [entry]])),
+              patch.object(GDO_RSSFeed, 'discover_urls', new=AsyncMock(return_value=[feed_url]))):
+            out = cli_plug(giz, '$rss.add example https://example.org')
+        self.assertIn('RSS feed example has been added.', out, 'Website discovery did not add the RSS feed.')
+        feed = GDO_RSSFeed.table().get_by_vals({'rss_name': 'example'})
+        self.assertEqual(feed_url, feed.get_url(), 'Discovered feed URL was not stored.')
+
     def test_02_abbo_cli(self):
         giz = cli_gizmore()
         out = cli_plug(giz, '$rss.abbo hackernews')
@@ -59,6 +71,18 @@ class module_rss_Test(GDOTestCase):
             'rsa_channel': channel.get_id(),
         })
         self.assertIsNotNone(abbo, 'Channel RSS subscription was not created.')
+
+    def test_02b_unabbo_cli(self):
+        giz = cli_gizmore()
+        out = cli_plug(giz, '$rss.unabbo hackernews')
+        self.assertIn('RSS feed hackernews has been unsubscribed.', out, 'RSS feed was not unsubscribed.')
+        feed = GDO_RSSFeed.table().get_by_vals({'rss_name': 'hackernews'})
+        channel = giz.get_server().get_or_create_channel('test_channel')
+        abbo = (GDO_RSSAbbo.table().select().
+                where(f'rsa_feed={feed.get_id()}').
+                where(f'rsa_channel={channel.get_id()}').
+                first().exec().fetch_object())
+        self.assertIsNone(abbo, 'Channel RSS subscription was not removed.')
 
     def test_03_abbo_permissions(self):
         member = cli_user('rss_member')
@@ -85,6 +109,18 @@ class module_rss_Test(GDOTestCase):
             'rse_feed': feed.get_id(),
             'rse_uid': reloaded.uid,
         }), 'Timer did not restore the deleted RSS entry.')
+
+    async def test_04b_timer_announces_entries(self):
+        feed = GDO_RSSFeed.table().get_by_vals({'rss_name': 'hackernews'})
+        server = cli_gizmore().get_server()
+        channel = server.get_or_create_channel('rss_announce')
+        GDO_RSSAbbo.blank({'rsa_feed': feed.get_id(), 'rsa_channel': channel.get_id()}).insert()
+        entry = GDO_RSSEntry.table().select().where(f'rse_feed={feed.get_id()}').first().exec().fetch_object()
+        with patch.object(channel, 'send_text', new=AsyncMock()) as send_text:
+            await module_rss.instance().announce_entries(feed, [entry])
+        send_text.assert_awaited_once_with('msg_rss_entry', (
+            feed.render_name(), entry.render_name(), entry.gdo_val('rse_url') or '',
+        ))
 
     def test_05_news_cli(self):
         giz = cli_gizmore()
@@ -126,6 +162,19 @@ class module_rss_Test(GDOTestCase):
         self.assertEqual('Atom news', entries[0].title)
         self.assertEqual('https://example.org/news/1', entries[0].url)
         self.assertEqual(2026, entries[0].published.year)
+
+    def test_08_discover_feeds(self):
+        urls = RSSDiscovery.discover('''
+            <html><head>
+            <link rel="alternate" type="application/rss+xml" href="/rss.xml">
+            <link rel="alternate stylesheet" type="application/atom+xml; charset=utf-8" href="atom.xml">
+            <link rel="alternate" type="text/html" href="not-a-feed">
+            <link rel="alternate" type="application/rss+xml" href="/rss.xml">
+            </head></html>''', 'https://example.org/news/')
+        self.assertEqual([
+            'https://example.org/rss.xml',
+            'https://example.org/news/atom.xml',
+        ], urls)
 
 if __name__ == '__main__':
     unittest.main()

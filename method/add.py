@@ -1,4 +1,5 @@
 from gdo.base.Logger import Logger
+from gdo.base.Util import html
 from gdo.date.Time import Time
 from gdo.form.GDT_Form import GDT_Form
 from gdo.form.MethodForm import MethodForm
@@ -23,9 +24,22 @@ class add(MethodForm):
         url = self.param_val('rss_url')
         try:
             entries = await GDO_RSSFeed.load_entries(url)
-        except Exception as error:
-            Logger.exception(error)
-            return self.err('err_rss_unreadable')
+        except Exception:
+            try:
+                urls = await GDO_RSSFeed.discover_urls(url)
+            except Exception as error:
+                Logger.exception(error)
+                return self.err('err_rss_unreadable')
+            if not urls:
+                return self.err('err_rss_unreadable')
+            if len(urls) > 1:
+                return self.err('err_rss_multiple', (html(', '.join(urls)),))
+            url = urls[0]
+            try:
+                entries = await GDO_RSSFeed.load_entries(url)
+            except Exception as error:
+                Logger.exception(error)
+                return self.err('err_rss_unreadable')
 
         checked = Time.get_date()
         feed = GDO_RSSFeed.blank({

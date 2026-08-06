@@ -14,6 +14,7 @@ from gdo.date.GDT_Deleted import GDT_Deleted
 from gdo.date.GDT_Timestamp import GDT_Timestamp
 from gdo.date.Time import Time
 from gdo.net.GDT_Url import GDT_Url
+from gdo.rss.RSSDiscovery import RSSDiscovery
 from gdo.rss.RSSParser import RSSParser
 
 
@@ -45,38 +46,44 @@ class GDO_RSSFeed(GDO):
             raise ValueError(f'HTTP {response.status} while loading {url}')
         return RSSParser.parse(content)
 
-    async def check_feed(self) -> int:
+    @classmethod
+    async def discover_urls(cls, url: str) -> list[str]:
+        response, content = await asgiref.sync.SyncToAsync(cls._load_url)(url)
+        if response.status >= 400:
+            raise ValueError(f'HTTP {response.status} while loading {url}')
+        return RSSDiscovery.discover(content, url)
+
+    async def check_feed(self) -> list['GDO_RSSEntry']:
         checked = Time.get_date()
         try:
-            added = self.store_entries(await self.load_entries(self.get_url()))
-            if added:
+            entries = self.store_entries(await self.load_entries(self.get_url()))
+            if entries:
                 self.save_val('rss_last_change', checked)
-            return added
+            return entries
         except Exception as error:
             Logger.exception(error)
-            return 0
+            return []
         finally:
             self.save_val('rss_last_check', checked)
 
     @staticmethod
     def _load_url(url: str):
         return httplib2.Http(timeout=10).request(url, method='GET', headers={
-            'accept': 'application/atom+xml, application/rss+xml, application/xml, text/xml',
+            'accept': 'text/html, application/atom+xml, application/rss+xml, application/xml, text/xml',
         })
 
-    def store_entries(self, entries) -> int:
+    def store_entries(self, entries) -> list['GDO_RSSEntry']:
         from gdo.rss.GDO_RSSEntry import GDO_RSSEntry
-        added = 0
+        added = []
         table = GDO_RSSEntry.table()
         for entry in entries:
             if table.get_by_vals({'rse_feed': self.get_id(), 'rse_uid': entry.uid}):
                 continue
-            table.blank({
+            added.append(table.blank({
                 'rse_feed': self.get_id(),
                 'rse_uid': entry.uid,
                 'rse_title': entry.title,
                 'rse_url': entry.url,
                 'rse_published': Time.get_date(entry.published.timestamp()) if entry.published else None,
-            }).insert()
-            added += 1
+            }).insert())
         return added
