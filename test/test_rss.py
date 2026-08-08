@@ -139,6 +139,19 @@ class module_rss_Test(GDOTestCase):
         entry = GDO_RSSEntry.table().select().where("rse_title='Initial entry'").first().exec().fetch_object()
         self.assertIn('Initial entry', entry.render_card(), 'RSS entry card did not render its title.')
 
+    def test_05b_stores_long_ascii_url(self):
+        feed = GDO_RSSFeed.table().get_by_vals({'rss_name': 'hackernews'})
+        url = 'https://example.org/?' + ('query=value&' * 80)
+        self.assertLessEqual(len(url), 1024)
+        feed.store_entries([
+            RSSParsedEntry('long-url', 'Long URL', url, datetime.now(timezone.utc)),
+        ])
+        entry = GDO_RSSEntry.table().get_by_vals({
+            'rse_feed': feed.get_id(),
+            'rse_uid': 'long-url',
+        })
+        self.assertEqual(url, entry.gdo_val('rse_url'))
+
     def test_06_parse_rss(self):
         entries = RSSParser.parse('''<?xml version="1.0"?>
             <rss version="2.0"><channel><item>
