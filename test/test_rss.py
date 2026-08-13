@@ -83,6 +83,17 @@ class module_rss_Test(GDOTestCase):
             f'{feeds} Feeds and {subscriptions} subscriptions. Use $rss.add and $rss.abbo to manage RSS feeds.',
             out)
 
+    def test_02aa_backfills_missing_published_date(self):
+        feed = GDO_RSSFeed.table().get_by_vals({'rss_name': 'hackernews'})
+        stored = GDO_RSSEntry.table().get_by_vals({'rse_feed': feed.get_id(), 'rse_uid': 'hn-add'})
+        stored.save_val('rse_published', None)
+        published = datetime.now(timezone.utc)
+
+        feed.store_entries([RSSParsedEntry('hn-add', 'Initial entry', 'https://news.ycombinator.com/item?id=1', published)])
+
+        stored = GDO_RSSEntry.table().get_by_id(stored.get_id())
+        self.assertIsNotNone(stored.gdo_val('rse_published'), 'Existing entries should receive a newly available publication date.')
+
     def test_02b_unabbo_cli(self):
         giz = cli_gizmore()
         out = cli_plug(giz, '$rss.unabbo hackernews')

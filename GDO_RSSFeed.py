@@ -77,7 +77,10 @@ class GDO_RSSFeed(GDO):
         added = []
         table = GDO_RSSEntry.table()
         for entry in entries:
-            if table.get_by_vals({'rse_feed': self.get_id(), 'rse_uid': entry.uid}):
+            existing = table.get_by_vals({'rse_feed': self.get_id(), 'rse_uid': entry.uid})
+            if existing:
+                if entry.published and existing.gdo_val('rse_published') is None:
+                    existing.save_val('rse_published', Time.get_date(entry.published.timestamp()))
                 continue
             added.append(table.blank({
                 'rse_feed': self.get_id(),
