@@ -72,6 +72,17 @@ class module_rss_Test(GDOTestCase):
         })
         self.assertIsNotNone(abbo, 'Channel RSS subscription was not created.')
 
+    def test_02a_overview_cli(self):
+        giz = cli_gizmore()
+        channel = giz.get_server().get_or_create_channel('test_channel')
+        feeds = GDO_RSSFeed.table().count_where('rss_deleted IS NULL')
+        subscriptions = GDO_RSSAbbo.table().count_where(
+            f'rsa_channel={channel.get_id()} AND rsa_user IS NULL')
+        out = cli_plug(giz, '$rss')
+        self.assertIn(
+            f'{feeds} Feeds and {subscriptions} subscriptions. Use $rss.add and $rss.abbo to manage RSS feeds.',
+            out)
+
     def test_02b_unabbo_cli(self):
         giz = cli_gizmore()
         out = cli_plug(giz, '$rss.unabbo hackernews')
