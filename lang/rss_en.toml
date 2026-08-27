@@ -2,7 +2,7 @@ module_rss = "Rss"
 
 mt_rss_overview = "RSS overview"
 md_rss_overview = "Show RSS feeds and subscriptions here."
-msg_rss_overview = "%d Feeds and %d subscriptions. Use $rss.add and $rss.abbo to manage RSS feeds."
+msg_rss_overview = "%d Feeds and %d subscriptions. Commands: $rss.add, $rss.abbo, $rss.unabbo, $rss.news."
 
 mt_rss_add = "Add RSS feed"
 md_rss_add = "Add an RSS or Atom feed."

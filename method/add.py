@@ -12,6 +12,9 @@ class add(MethodForm):
     def gdo_trigger(cls) -> str:
         return 'rss.add'
 
+    def gdo_method_hidden(self) -> bool:
+        return True
+
     def gdo_create_form(self, form: GDT_Form) -> None:
         feed = GDO_RSSFeed.blank()
         form.add_fields(

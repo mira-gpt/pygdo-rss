@@ -13,7 +13,9 @@ from gdo.rss.GDO_RSSFeed import GDO_RSSFeed
 from gdo.rss.RSSDiscovery import RSSDiscovery
 from gdo.rss.RSSParser import RSSParsedEntry, RSSParser
 from gdo.rss.method.abbo import abbo
+from gdo.rss.method.add import add
 from gdo.rss.method.news import news
+from gdo.rss.method.unabbo import unabbo
 from gdo.rss.module_rss import module_rss
 from gdo.table.GDT_Table import TableMode
 from gdotest.TestUtil import cli_plug, reinstall_module, cli_gizmore, cli_user, GDOTestCase, WebPlug, install_module
@@ -80,8 +82,15 @@ class module_rss_Test(GDOTestCase):
             f'rsa_channel={channel.get_id()} AND rsa_user IS NULL')
         out = cli_plug(giz, '$rss')
         self.assertIn(
-            f'{feeds} Feeds and {subscriptions} subscriptions. Use $rss.add and $rss.abbo to manage RSS feeds.',
+            f'{feeds} Feeds and {subscriptions} subscriptions. Commands: $rss.add, $rss.abbo, $rss.unabbo, $rss.news.',
             out)
+
+    def test_02ab_only_rss_is_visible_in_help(self):
+        self.assertFalse(module_rss.instance().get_method('rss').gdo_method_hidden())
+        self.assertTrue(add().gdo_method_hidden())
+        self.assertTrue(abbo().gdo_method_hidden())
+        self.assertTrue(unabbo().gdo_method_hidden())
+        self.assertTrue(news().gdo_method_hidden())
 
     def test_02aa_backfills_missing_published_date(self):
         feed = GDO_RSSFeed.table().get_by_vals({'rss_name': 'hackernews'})

@@ -15,6 +15,9 @@ class news(MethodQueryCards):
     def gdo_trigger(cls) -> str:
         return 'rss.news'
 
+    def gdo_method_hidden(self) -> bool:
+        return True
+
     def gdo_parameters(self) -> list[GDT]:
         return [
             GDT_UInt('limit').not_null().initial('10').min(1).max(100),

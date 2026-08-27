@@ -11,6 +11,9 @@ class abbo(Method):
     def gdo_trigger(cls) -> str:
         return 'rss.abbo'
 
+    def gdo_method_hidden(self) -> bool:
+        return True
+
     def gdo_parameters(self) -> list[GDT]:
         return [
             GDT_Object('feed').table(GDO_RSSFeed.table()).not_null(),

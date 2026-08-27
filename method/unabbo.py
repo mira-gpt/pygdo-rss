@@ -8,6 +8,9 @@ class unabbo(abbo):
     def gdo_trigger(cls) -> str:
         return 'rss.unabbo'
 
+    def gdo_method_hidden(self) -> bool:
+        return True
+
     def gdo_execute(self):
         feed = self.param_value('feed')
         where = f'rsa_feed={feed.get_id()}'
