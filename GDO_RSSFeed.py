@@ -1,4 +1,4 @@
-import asgiref.sync
+import asyncio
 import httplib2
 
 from gdo.base.GDO import GDO
@@ -41,14 +41,14 @@ class GDO_RSSFeed(GDO):
 
     @classmethod
     async def load_entries(cls, url: str):
-        response, content = await asgiref.sync.SyncToAsync(cls._load_url)(url)
+        response, content = await asyncio.to_thread(cls._load_url, url)
         if response.status >= 400:
             raise ValueError(f'HTTP {response.status} while loading {url}')
         return RSSParser.parse(content)
 
     @classmethod
     async def discover_urls(cls, url: str) -> list[str]:
-        response, content = await asgiref.sync.SyncToAsync(cls._load_url)(url)
+        response, content = await asyncio.to_thread(cls._load_url, url)
         if response.status >= 400:
             raise ValueError(f'HTTP {response.status} while loading {url}')
         return RSSDiscovery.discover(content, url)
