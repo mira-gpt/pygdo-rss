@@ -15,6 +15,7 @@ from gdo.rss.RSSParser import RSSParsedEntry, RSSParser
 from gdo.rss.method.abbo import abbo
 from gdo.rss.method.add import add
 from gdo.rss.method.news import news
+from gdo.rss.method.remove import remove
 from gdo.rss.method.unabbo import unabbo
 from gdo.rss.module_rss import module_rss
 from gdo.table.GDT_Table import TableMode
@@ -82,7 +83,7 @@ class module_rss_Test(GDOTestCase):
             f'rsa_channel={channel.get_id()} AND rsa_user IS NULL')
         out = cli_plug(giz, '$rss')
         self.assertIn(
-            f'{feeds} Feeds and {subscriptions} subscriptions. Commands: $rss.add, $rss.abbo, $rss.unabbo, $rss.news.',
+            f'{feeds} Feeds and {subscriptions} subscriptions. Commands: $rss.add, $rss.del, $rss.abbo, $rss.unabbo, $rss.news.',
             out)
 
     def test_02ab_only_rss_is_visible_in_help(self):
@@ -91,6 +92,7 @@ class module_rss_Test(GDOTestCase):
         self.assertTrue(abbo().gdo_method_hidden())
         self.assertTrue(unabbo().gdo_method_hidden())
         self.assertTrue(news().gdo_method_hidden())
+        self.assertTrue(remove().gdo_method_hidden())
 
     def test_02aa_backfills_missing_published_date(self):
         feed = GDO_RSSFeed.table().get_by_vals({'rss_name': 'hackernews'})
@@ -219,6 +221,17 @@ class module_rss_Test(GDOTestCase):
             'https://example.org/rss.xml',
             'https://example.org/news/atom.xml',
         ], urls)
+
+    def test_09_remove_cli_requires_creator_or_staff(self):
+        feed = GDO_RSSFeed.table().get_by_vals({'rss_name': 'hackernews'})
+        member = cli_user('rss_member')
+        out = cli_plug(member, '$rss.del hackernews')
+        self.assertIn('not allowed', out.lower())
+        self.assertIsNotNone(GDO_RSSFeed.table().get_by_id(feed.get_id()))
+
+        out = cli_plug(cli_gizmore(), '$rss.del hackernews')
+        self.assertIn('RSS feed hackernews has been deleted.', out)
+        self.assertIsNone(GDO_RSSFeed.table().get_by_id(feed.get_id()))
 
 if __name__ == '__main__':
     unittest.main()

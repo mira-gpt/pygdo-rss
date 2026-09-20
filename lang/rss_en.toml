@@ -2,13 +2,14 @@ module_rss = "Rss"
 
 mt_rss_overview = "RSS overview"
 md_rss_overview = "Show RSS feeds and subscriptions here."
-msg_rss_overview = "%d Feeds and %d subscriptions. Commands: $rss.add, $rss.abbo, $rss.unabbo, $rss.news."
+msg_rss_overview = "%d Feeds and %d subscriptions. Commands: $rss.add, $rss.del, $rss.abbo, $rss.unabbo, $rss.news."
 
 mt_rss_add = "Add RSS feed"
 md_rss_add = "Add an RSS or Atom feed."
 msg_rss_added = "RSS feed %s has been added."
 err_rss_unreadable = "The URL does not provide a readable RSS or Atom feed."
 err_rss_multiple = "The website provides multiple feeds. Please add one directly: %s"
+msg_rss_deleted = "RSS feed %s has been deleted."
 
 ##########
 # Abbo #
